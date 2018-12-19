@@ -55,11 +55,24 @@ We could try to improve the above solutions. What we needed to realize is that t
 What we wanted to achieve is to write every piece of code just once. Here we applied my knowledge gained while working on my semestral project. There the whole UI was written in HTML5 and JavaScript. These two technologies are used all around the Internet and web apps have seen a great rise in popularity. It benefits us because it means that there are numerous good frameworks available and users would be used to an application designed in a similar manner. Then we would need to write the UI just once and it would look the same across all platforms.
 \par
 It turns out that the above-mentioned ideas are now feasible. There is an open-source project written in C++ called Chromium Embedded Framework~(CEF). CEF focuses on facilitating embedded browser use cases in third-party applications~\citep{cef}. That means that we can embed a web browser in our application where we run the UI and the rest of the backend will run alongside that. CEF offers a way to call C++ code from JavaScript so we do not need to worry about communication between these two languages.
-\todo{write a paragraph about previous project on electron and that we found CEF and that identical UI benefits us}
+%\todo{write a paragraph about previous project on electron and that we found CEF and that identical UI benefits us}
 
 
 \section{Modules}
-\todo{describe what modules we have and why exactly these modules and no less or no more}
+
+In this section we will talk about all the modules that we decided to divide our application into. We will explain why we need each module, what is their role and purpose and how they communicate between each other.
+\par
+First, we need to understand what functionality our application requires. Then we can group similar functionality together and wrap it up in modules. Each module should be able to perform its task without the help of another and offer certain services to other modules or be able to consume other module's services if needed. These services will then be predefined by a certain interface so we gain an ability to work with different implementations of on module without the need to modify other modules.
+\par
+We need to have access to a collection of music files, keep information about their location, store their metadata like title, artist, album for easier browsing and allow to group them into playlists. Usually, this is called music library.
+\par
+Then we need to be able to play these music files. In order to do that, first we need to access them. Most music files are encoded to use less storage space, so we need to decode them. Only then we can send the data to sound card to finally play some music.
+\par
+We will also need to allow our users to browse the music library. Let them order the songs and create their playlists. Give them control over music playback. Allow them to customize the application and set the settings they need. Show them what regular users ordered to be played. We require our UI to support all of this.
+\par
+Lastly, we need a tool for synchronization between our application and the regular users. They want to see what songs we offer in our playlist and we want to know their orders so we can play what they desire.
+\par
+Above-mentioned enumeration of functionality roughly describes requirements for each module. Since there are much more details about each of them, we will define and explain them more thoroughly below.
 
 \section {Fileserver Module}
 \todo{Describe the function of the module and describe it's API, why we went for Rest API and that it is scalable}

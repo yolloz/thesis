@@ -1,0 +1,11 @@
+# TeX compilation files
+*.gz
+*.aux
+*.bbl
+*.blg
+*.lo[gft]
+*.out
+*.toc
+
+# PDF/A temp metadata
+*.xmpi
