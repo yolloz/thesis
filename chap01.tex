@@ -57,7 +57,9 @@ What we wanted to achieve is to write every piece of code just once. Here we app
 It turns out that the above-mentioned ideas are now feasible. There is an open-source project written in C++ called Chromium Embedded Framework~(CEF). CEF focuses on facilitating embedded browser use cases in third-party applications~\citep{cef}. That means that we can embed a web browser in our application where we run the UI and the rest of the backend will run alongside that. CEF offers a way to call C++ code from JavaScript so we do not need to worry about communication between these two languages.
 %\todo{write a paragraph about previous project on electron and that we found CEF and that identical UI benefits us}
 
-
+%%-----------------------------------------------------------------------------------------
+%% SECTION
+%%-----------------------------------------------------------------------------------------
 \section{Modules}
 
 In this section we will talk about all the modules that we decided to divide our application into. We will explain why we need each module, what is their role and purpose and how they communicate between each other.
@@ -72,16 +74,48 @@ We will also need to allow our users to browse the music library. Let them order
 \par
 Lastly, we need a tool for synchronization between our application and the regular users. They want to see what songs we offer in our playlist and we want to know their orders so we can play what they desire.
 \par
-Above-mentioned enumeration of functionality roughly describes requirements for each module. Since there are much more details about each of them, we will define and explain them more thoroughly below.
+Above-mentioned enumeration of functionality roughly describes requirements for each module. Since there are much more details about each of them, we will define the requirements and interface for each module below. For information about implementation of modules, see \todo{add link to implementation chapter}
 
-\section {Fileserver Module}
-\todo{Describe the function of the module and describe it's API, why we went for Rest API and that it is scalable}
+%%-----------------------------------------------------------------------------------------
+%% SECTION
+%%-----------------------------------------------------------------------------------------
+\section{Fileserver Module}
 
+Fileserver module manages music files contained in music library. It knows the location of these files and how to access them, allows adding or removing files and distributes them on demand for playback.
+\par
+Fileserver handles extraction of metadata from music files. Supported metadata are song title, artist name, album name, genre name and song duration. These are stored for easier browsing of the library.
+\par
+This module allows to browse, search and order songs in its music library. Additionally, these songs can then be grouped in playlists. A playlist is a collection of songs from music library. It has a name and optionally a description. Every user can see only their playlists.
+\par
+Services provided by this module are available through a predefined interface and it does not use or require any other module.
+
+%%-----------------------------------------------------------------------------------------
+\subsection{Interface}
+
+This interface defines how to access and browse music library offered by fileserver. We decided to support only browsing the library and managing playlists and omit manipulation with music files from this interface, as the way of working with files may differ greatly across platforms and it might also be unwanted to offer file management capability to users. Instead, implementations of this module are free to choose their own way of managing the contents of the library.
+\par
+First, we need to choose a suitable interface technology. We need to support distributed architecture, so we have to choose from network technologies.
+\par
+One option would be to communicate with fileserver over a dedicated socket. However, we declined this option, because we do not need to have an open connection with fileserver at all times so it would be a waste of resources. It would limit the number of possible connections to a fileserver and therefore the solution would not be scalable enough.
+\par
+Another option is to create this interface as web API or web service \todo{napisat poznamku pod ciarou co ktora vec znamena}. This approach seems more suitable for the task as the main purpose of fileserver's interface is to provide access to data. While the same result can be achieved using either technology, we opted for RESTful API instead of SOAP-based web service, because it is more modern, it is easier to implement and it uses HTTP protocol in a more straight-forward way, so the resulting implementations can be more lightweight.
+\par
+The resulting interface follows principles of REST API design. All requests are stateless, no state needs to be stored by the interface implementation. Each resource is defined by the link that it can be accessed by and query parameters are used to modify the result. HTTP request method determines the action performed when accessing a resource. GET method is used to retrieve resources, POST method is used to create new resource, PUT requests modify resources and DELETE method removes resources. JSON file format is used for transferring data. For more details see the interface documentation \todo{add link to documentation}.
+
+%%-----------------------------------------------------------------------------------------
+%% SECTION
+%%-----------------------------------------------------------------------------------------
 \section {Player Module}
 \todo{Describe why it is separate module, why we communicate with websocket and how does it get it's music}
 
+%%-----------------------------------------------------------------------------------------
+%% SECTION
+%%-----------------------------------------------------------------------------------------
 \section {Real-time Database Module}
 \todo{Describe why realtime and not other database, describe what realtime database is, how it is a middleware between desktop and mobile app and why firebase}
 
+%%-----------------------------------------------------------------------------------------
+%% SECTION
+%%-----------------------------------------------------------------------------------------
 \section {Manager Module}
 \todo{Describe what it displays, how it communicates with other modules}
