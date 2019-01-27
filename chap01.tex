@@ -106,14 +106,74 @@ The resulting interface follows principles of REST API design. All requests are 
 %% SECTION
 %%-----------------------------------------------------------------------------------------
 \section {Player Module}
-\todo{Describe why it is separate module, why we communicate with websocket and how does it get it's music}
+
+Player module, as its name suggests, takes care of playing music and all related tasks, such as decoding and playback control. Since music files do not have to be located on the machine where this module is running, it has to take care of getting and caching necessary music files.
+\par
+This module utilizes fileserver module to get music files and offers a communication channel to control its behavior.
+
+%%-----------------------------------------------------------------------------------------
+\subsection{Communication and Control}
+
+The communication with player module is different from fileserver module. Fileserver is stateless, can support multiple users and communication is mostly one-way. On the other hand, player needs to preserve its state, e.g. playback progress or cache, it can only support one user as there is usually only one audio device available and it needs to communicate both ways, besides reacting to actions it can also trigger action on its own. Therefore the requirements for communication technology are different too.
+\par
+Due to the properties mentioned above, we cannot use web service approach. However, using a dedicated socket seems to be very suitable. Upon establishing a connection, player may stop listening for new connections, so no more than one session can be running at a time. The state can be easily held within a session since there are only two participants. Two-way communication can be achieved simply by choosing an appropriate protocol.
+\par
+What we try to accomplish is to communicate with and control the player as if it was a part of our code, but it can be located anywhere accessible via network. This technique is called Remote~Procedure~Call~(RPC)\todo{poznamka pod ciarou}. Using this technique, we can call player function stubs as if it was a local component. These stubs then pack function name with parameters into a message and send it to a remote player instead of calling the actual function locally. Upon receiving the message, the player unpacks the message and calls the desired function with provided parameters.
+\par
+The last decision we have to take is the protocol that we use to transfer RPC messages. As mentioned above, full-duplex communication is desired. Furthermore, we know that the player will communicate with manager module, which uses web technologies. We consider C++ to be more capable to adapt than web technologies, web-friendly protocol would therefore be beneficial as it would simplify the implementation of manager module without making player implementation too complicated.
+\par
+We decided to use WebSocket protocol to transfer PRC messages encoded in JSON. WebSocket is a common protocol used by web applications that require a full-duplex communication and has implementations available in many programming languages including C++, so it does not limit different player module implementations. JSON is a standard simple format for transferring messages between different systems. Encoding RPC messages in JSON is easy to use and platform or language independent.
+\par
+For the detailed documentation of communication see \todo{link to documentation}
+
+%%-----------------------------------------------------------------------------------------
+\subsection{Caching, Queues and Playback}
+
+The application is expected to provide continuous music playback. The distributed module design creates a need to allow music file caching, so that next song is always ready to play without a pause for buffering after the previous one finished. To achieve that, player module needs to know which songs to cache in advance. To solve that, it could have an internal queue where the songs would be enqueued by an outside source when there is a lack of them and player would dequeue and cache them when needed.
+\par
+There is one problem with a single queue solution. One of the application's main features is the song ordering system for regular users. It means that we should play ordered songs when there are any available and play any other songs when there are no orders. However, putting all songs in a single queue does not provide enough flexibility to do that. Instead, we use two separate queues. First, called order queue, is used for ordered songs. The other is called playlist queue and is used for random songs that are played when order queue is empty or buffering. Another difference between them is that order queue is filled by an outside source when an order is made while playlist queue is filled by the same outside source, but on request by player module itself when there are not enough songs in this queue. Furthermore, this design allows each implementation to determine its own required queue sizes and caching algorithm.
+\par
+The two queue design introduces necessary flexibility for song caching. On the other hand, it is simple to determine which song is next using only one queue, but there are two choices with two of them. It is therefore important to establish a common behavior across all implementations. The following algorithm is required to be followed. It can be described by two ideas - ordered songs have preference to playlist songs and random song is better than awkward silence.
+
+\begin{itemize}
+    \item If order queue is not empty, check if first item is already cached. If yes, this is the next song. If not, make sure it is buffering and continue to next step.
+    \item If playlist queue is not empty, check if the first item is already cached. If yes, this is the next song. If not, make sure it is buffering, wait a short amount of time and repeat this algorithm again.
+    \item If both queues are empty, report an error
+\end{itemize}
+
+This algorithm ensures that ordered songs are played whenever it is possible, but if they were ordered too recently to be buffered, a random song is played instead. To provide maximal reliability, enough random songs should be cached even when there are any orders.
 
 %%-----------------------------------------------------------------------------------------
 %% SECTION
 %%-----------------------------------------------------------------------------------------
-\section {Real-time Database Module}
-\todo{Describe why realtime and not other database, describe what realtime database is, how it is a middleware between desktop and mobile app and why firebase}
+\section {Realtime Database Module}
 
+So far we discussed how to store and play music from our application and what variety of functions it can offer to its user, but we did not mention how to share the library and application state with other users and let them make the song orders. The role of this module therefore is to be place where the information is exchanged. It is the middle ground, where desktop application users upload metadata from their current music library or playlist and read song orders and regular mobile application users can access and browse the data to make their orders.
+
+%%-----------------------------------------------------------------------------------------
+\subsection{Database Choice}
+
+The nature of the module's role is to store some data, so it is a sort of database. Currently there are several different types of databases available on the market. To choose the right solution, first we need to take a closer look at what data we want and need to store there and how we would like to deal with it. Then we can evaluate pros and cons of each database solution in regard to our specific needs.
+
+%%-----------------------------------------------------------------------------------------
+\subsubsection{Stored Data}
+
+As we mentioned before, the most important data we want to keep are the song library metadata. These are stored on the fileserver but we want to store a simplified version online to allow regular users to browse it. The actual size of a music library may range from a few hundreds to thousands or even tens of thousands of songs while only a small part of that might be available in current playlist. Data redundancy and synchronization are the main issues that need to be addressed. We can keep the entire music library stored online, synchronizing it with fileserver after every change. Data transfers would be numerous yet relatively small, but space requirements would be big. On the other hand, we can store online only the current playlist. No storage space would be occupied when the application is offline as well as no data for currently unavailable songs would need be stored. Space requirement reduction would cost the users the added time that it would take to upload the entire new playlist on change. The number of data transfers would decrease, but their size would grow greatly.
+\par
+The next purpose of this module existence is to store orders of regular users. Once they find their desired song, we need to store it so the application can prepare to play it, other regular users can check what songs will be played next and also when will their song start playing. Here the main issue is how to synchronize ordered songs between this module and the application. One way is to let application periodically check for new orders. This would generate a number of useless requests that would need to be handled. The other way is to notify the application after an order was made, but that is a lot more difficult to implement.
+\par
+The last data we need to store are user data. Application users are identified as an establishment or a music spot where the given music is played. We need to provide that information to regular users. Regular users also need an account and these data need to be stored somewhere. There are multiple reasons for establishing these accounts. It slightly prevents a bad behavior when malicious orders are made by adding extra work to create the account and after this behavior is recognized the account can be banned. As this application is also a jukebox substitution and orders there are paid for, user accounts are good to have to allow this feature in the future. Lastly, having information about users can be used to improve their user experience as mobile application may customize its behavior to suit each user as much as possible. It is important to mention that such data might be sensitive so they should be appropriately protected.
+
+%%-----------------------------------------------------------------------------------------
+\subsubsection{Realtime Database}
+
+Taking all mentioned reasons into consideration, we decided to use Firebase Platform~\citep{firebase} and its Firebase Realtime Database as a data storage. Firebase is Google's platform for mobile and web applications and naturally has great support for them. It provides software development kit~(SDK) for all major mobile and web programming languages. Besides realtime database it offers file storage, which might be of use for uploading album and artist artwork, or secure and easy-to-use authentication service that supports multiple sign-in options either with e-mail or using other account on Facebook, Twitter or others. All these useful tools not only help simplify our application, but can be beneficial for the design and development of mobile application for regular users.
+\par
+The Firebase Realtime Database is a cloud-hosted NoSQL database. Data is stored as JSON and synchronized in realtime to every connected client~\citep{firebaseDocs}. It allows to create a subscription on any node in the JSON's tree and it notifies all subscribers about any changes on that node. This particular feature is useful for song orders. After the application's user publishes the playlist, the application can subscribe to its orders node in database and it will be notified every time a new order is made.
+\par
+One of the basic advantages of NoSQL database is its data structure flexibility. We can utilize it for our user data. This data is likely to be modified with new features, whether it is data collection or user settings. It would not be important to change the database structure after every added feature, only accounts that utilize the new feature would need to be modified.
+\par
+The trade-off of this solution is song library metadata. Putting it in NoSQL database means we strip it off important indices that would help the regular users to search in library. Their searches would be more performance-demanding. There are two ways to deal with this: either design the mobile application in a smart way to reduce the amount of searches that the regular users make or use a standalone SQL database just for this data if it proves to be worth the effort. On the other hand, without indices it is much easier to add and remove the data to the database, so bulk-uploading current playlist on the server would be easier. We are satisfied with this trade-off, as it is much easier to maintain just one database and if it proves important, it is still possible to switch to two database solution.
 %%-----------------------------------------------------------------------------------------
 %% SECTION
 %%-----------------------------------------------------------------------------------------
