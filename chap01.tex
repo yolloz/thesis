@@ -178,4 +178,16 @@ The trade-off of this solution is song library metadata. Putting it in NoSQL dat
 %% SECTION
 %%-----------------------------------------------------------------------------------------
 \section {Manager Module}
-\todo{Describe what it displays, how it communicates with other modules}
+
+The last module is the one that puts the pieces of the puzzle together. It consumes services provided by all other modules, manages the communication and whole application run and it provides graphical user interface. 
+\par
+At the beginning of the chapter we chose JavaScript as the programming language for the GUI implementation in this thesis. However, thanks to modular design it is possible to create an implementation of this module in any other suitable programming language. While creating another implementation for personal computers might be considered controversial with our philosophy of reducing the amount of work by creating a cross-platform implementations, it would make sense to create a different implementation of this module for mobile devices like tablets and smartphones because of the obvious differences in input method (mouse and keyboard vs. touch screen) and screen size. Even though such implementation is outside of the scope of this thesis, there are multiple frameworks that allow cross-platform design approach for these devices similar to ours.
+
+%%-----------------------------------------------------------------------------------------
+\subsection {Communication With Other Modules}
+
+The Fileserver module exposes API for browsing its music library and playlist modification. This module should consume that API and provide its resources to user via GUI.
+\par
+The communication with Player module is a little more complicated. In this two-way communication, Manager module sends commands to Player module based on user interaction, fills its song queues and displays Player's state to user. \todo{? either describe communication in more detail here or refer to documentation ?}
+\par
+Lastly, Realtime Database module is used as authentication authority, Manager module gets user account information and song orders from it and provides it with music library metadata.
