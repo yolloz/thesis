@@ -5,6 +5,26 @@ In this chapter we will discuss the actual implementation details of every modul
 %%-----------------------------------------------------------------------------------------
 %% SECTION
 %%-----------------------------------------------------------------------------------------
+\section{Programming Language}
+
+\todo{rewrite this section}
+
+Next decision we had to take was to select a suitable programming language. We had to satisfy the main features and their demands that we have set earlier. That is, we had to find a way to support multiple platforms, while in the same time we needed flexible enough language to handle our modular design and fast enough to help us with scalability.
+\par
+One solution would be to create an implementation for every platform in a language that is native for them. That would probably result in use of C++ and a Linux-friendly UI framework on Linux, Objective-C on macOS and C\# on Windows. While this would allow us to create suitable application for each platform and to use platform-specific frameworks and libraries, it would be highly labour-intensive as it would require every piece of code to be written three times. Furthermore, it would require knowledge of all three programming languages. Therefore we declined this solution because it offered too little benefits at too high price.
+\par
+Another way would be to use a language that was designed to be multi-platform like Java. We would only need to write code once and then run it on all three platforms. We had to reject this solution for two reasons. First is the core problem of Java - it requires a Java Virtual Machine to run any Java code, which might be a big penalty in our goal to make our application available on miniature PCs. Second reason is the struggle with UI frameworks that Java offers. While they might have improved over the past few years and might be suitable for business applications, we want to create an application with attractive and modern UI and we do not think Java can offer this. Another language with such capabilities would be C++, but we have to reject it for the same UI framework issues.  
+\par
+We could try to improve the above solutions. What we needed to realize is that the major problem on each platform was the user interface. That is the major thing that disallows us to use one language across all platforms. With that in mind we can create a solution where the backend - the logic of the application and IO management - would be written in C++ and we would use bindings that Objective-C and C\# offer to call code written in C++. Then we would only need to implement the UI for each platform. This way the amount of code, that would need to be written multiple times, would be significantly reduced. However, we would still need to know all three languages in order to do so.
+\par
+What we wanted to achieve is to write every piece of code just once. Here we applied my knowledge gained while working on my semestral project. There the whole UI was written in HTML5 and JavaScript. These two technologies are used all around the Internet and web apps have seen a great rise in popularity. It benefits us because it means that there are numerous good frameworks available and users would be used to an application designed in a similar manner. Then we would need to write the UI just once and it would look the same across all platforms.
+\par
+It turns out that the above-mentioned ideas are now feasible. There is an open-source project written in C++ called Chromium Embedded Framework~(CEF). CEF focuses on facilitating embedded browser use cases in third-party applications~\citep{cef}. That means that we can embed a web browser in our application where we run the UI and the rest of the backend will run alongside that. CEF offers a way to call C++ code from JavaScript so we do not need to worry about communication between these two languages.
+%\todo{write a paragraph about previous project on electron and that we found CEF and that identical UI benefits us}
+
+%%-----------------------------------------------------------------------------------------
+%% SECTION
+%%-----------------------------------------------------------------------------------------
 \section{Fileserver Module}
 \todo{add short intro about how we designed it}
 
