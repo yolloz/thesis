@@ -131,11 +131,30 @@ The functionality of the server is layered into multiple classes. At the top is 
 \par
 When the server is started, \texttt{API} class instance runs an instance of \texttt{Listener} class. This class provides functionality to listen for and accept incoming connections asynchronously.
 \par
-After a new connection is accepted, an instance of \texttt{Session} class takes over the created socket and handles the incoming ant outgoing communication. It represents a session of Player module during which the music playback occurs. This instance owns song cache and music player and takes care of cooperation between them. Reads and writes on WebSocket are performed asynchronously.
+After a new connection is accepted, an instance of \texttt{Session} class takes over the created socket and handles the incoming ant outgoing communication. It represents a session of Player module during which the music playback occurs. This instance owns song cache and music player and takes care of cooperation between them. Reads and writes on WebSocket are performed asynchronously. 
 
 %%-----------------------------------------------------------------------------------------
 \subsection{Audio Decoding and Playback}
-\todo{explain how ffmpeg communicates with portaudio and all other things}
+
+For audio decoding and playback we utilize two libraries - ffmpeg and PortAudio. PortAudio supports asynchronous playback by providing a callback function which is run every time audio device needs more data to output. Within this callback we run a function that decodes required amount of samples using ffmpeg library and writes it to output buffer. This loop runs until we reach the end of music file or the playback is paused.
+
+%%-----------------------------------------------------------------------------------------
+\subsubsection{Code Remarks}
+
+Most of the music player functionality is contained within \texttt{MusicPlayer} class. Besides that there are two global static callback functions that are required by PortAudio and two global functions required by ffmpeg. By default, ffmpeg library supports decoding from file. To support decoding from \texttt{std::basic\_istream} utilized by song cache we had to provide custom read and seek functions. PortAudio callback function provides a pointer to a data structure of choice to keep context as this function is global. We use \texttt{StreamInfo} structure. It holds both PortAudio and ffmpeg data members as well as additional information about the state of the playback.
+\par
+Before the playback can start, it is necessary to call \texttt{Open} method. This method prepares the music file for playback. The process consists of these steps:
+\begin{itemize}
+    \item Creating custom \texttt{AVIOContext} that supports reading data from \texttt{std::basic\_istream} by providing read and seek function and a buffer for data
+    \item Opening the file and finding stream information
+    \item Using stream information to detect audio stream within the file and finding appropriate decoder for the stream format
+    \item Initializing selected decoder 
+    \item Initializing audio output device to correctly interpret data provided by audio stream and decoder
+    \item Initializing PortAudio output stream and providing it with the \texttt{StreamInfo} structure that we filled in previous steps
+\end{itemize}
+After that, the file is ready and \texttt{Play} and \texttt{Pause} methods can be called to control plaback progress. \texttt{Close} method frees all allocated data and prepares player for another music file.
+\par
+Additionally, \texttt{MusicPlayer} class offers two notification methods that allow the owner to subscribe to them. First one called \texttt{SetPlaybackFinishedCallback} notifies the owner when playback has reached the end of file and new music file is required. The other called \texttt{SetTimeUpdateCallback} notifies the owner of the elapsed time of the current playback. For performance reasons this notification is raised approximately every 500 milliseconds.
 \todo{add some information about how are files encoded, formats, loss-less etc.}
 
 %%-----------------------------------------------------------------------------------------
@@ -161,4 +180,4 @@ After a new connection is accepted, an instance of \texttt{Session} class takes 
 \todo{add short intro about how we designed it}
 
 \subsection{Structure}
-\todo{describe firebase structure}
+\todo{describe firebase structure} 
