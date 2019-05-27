@@ -40,7 +40,7 @@ Both other languages would be equally capable for the task, but C++ provides mor
 
 This module consists of two main parts - file storage and RESTful interface. We used SQL database to store music file metadata and its location in file system and playlists. The REST API follows predefined interface. It adds additional resources for file management as its selected way to manage content.
 
-\subsection{Libraries used}
+\subsection{Libraries Used}
 We used two third-party libraries for the implementation of this module.
 \par
 First one is SQLite that we used for data storage. SQLite is a C-language library that implements a small, fast, self-contained, high-reliability, full-featured, SQL database engine. SQLite is the most used database engine in the world. SQLite is built into all mobile phones and most computers and comes bundled inside countless other applications that people use every day. The SQLite file format is stable, cross-platform, and backwards compatible and the developers pledge to keep it that way through at least the year 2050. SQLite database files are commonly used as containers to transfer rich content between systems and as a long-term archival format for data. There are over 1 trillion SQLite databases in active use~\citep{sqlite}. It allows us to to create a small SQL database file locally on the device where it runs.
@@ -80,9 +80,6 @@ The \texttt{FileServerAPI} class is the implementation of the mentioned listener
 \par
 \texttt{FileServerHandler} class is the bridge implementation for SQLite data storage. This bridge is the owner of \texttt{SqliteAPI} instance and translates REST API calls to \texttt{SqliteAPI} calls and translates data returned by \texttt{SqliteAPI} to JSON format supported by REST API.
 
-\subsection{Security}
-\todo{discuss a bit about security and what were the options and what did we choose to follow}
-
 %%-----------------------------------------------------------------------------------------
 %% SECTION
 %%-----------------------------------------------------------------------------------------
@@ -91,7 +88,7 @@ The \texttt{FileServerAPI} class is the implementation of the mentioned listener
 The main feature of Player module is playing music. Besides that, it is important to have music files ready for playback as they might not be stored on the same device. We implemented simple but reliable caching functionality to provide us with reliable amount of the files on demand. Lastly, we implemented a required WebSocket-based communication interface.
 
 %%-----------------------------------------------------------------------------------------
-\subsection{Libraries used}
+\subsection{Libraries Used}
 We utilized three third-party libraries in this module. Two are used for audio playback and one for communication interface.
 \par
 FFmpeg is the leading multimedia framework, able to decode, encode, transcode, mux, demux, stream, filter and play pretty much anything that humans and machines have created. It supports the most obscure ancient formats up to the cutting edge. No matter if they were designed by some standards committee, the community or a corporation. It is also highly portable: FFmpeg compiles, runs, and passes testing infrastructure FATE across Linux, Mac OS X, Microsoft Windows, the BSDs, Solaris, etc. under a wide variety of build environments, machine architectures, and configurations~\citep{ffmpeg}. Basically, this library allows us to support any music file format we  would like to. We utilised it in Fileserver module for metadata extraction, but it is utilised more heavily here for audio decoding.
@@ -158,26 +155,100 @@ Additionally, \texttt{MusicPlayer} class offers two notification methods that al
 \todo{add some information about how are files encoded, formats, loss-less etc.}
 
 %%-----------------------------------------------------------------------------------------
-\subsection{Security}
-\todo{discuss a bit about security and what were the options and what did we choose to follow}
-
-%%-----------------------------------------------------------------------------------------
 %% SECTION
 %%-----------------------------------------------------------------------------------------
 \section{Manager Module}
-\todo{add short intro about how we designed it}
 
-\subsection{Libraries used}
-\todo{write about React, CEF, MaterialUI, intl, and maybe axios}
+Manager module provides user interface for our application. It is written as a single-page web application and runs in an embedded Chromium browser. Other modules are managed from this module by utilising their communication interfaces. Our implementation supports running its own Player and Fileserver module to provide an all-in-one product, but follows the concept by allowing connection to any other of these modules.
+\par
+The modules itself consists of two submodules - web application and browser. As both of them use different programming languages and technologies, different considerations were needed during implementation and so we will describe them separately. At the end, we will sum up how they work together to create this module.
 
-\subsection{Design Principles}
-\todo{explain what principles we held during implementation, dumb and smart components, global state, action creators, reducers, routes}
+%%-----------------------------------------------------------------------------------------
+\subsection{Browser Part}
 
+For the browser part we used Chromium Embedded Framework~(CEF). CEF is a BSD-licensed open source project founded by Marshall Greenblatt in 2008 and based on the Google Chromium project. Unlike the Chromium project itself, which focuses mainly on Google Chrome application development, CEF focuses on facilitating embedded browser use cases in third-party applications. CEF supports a wide range of programming languages and operating systems and can be easily integrated into both new and existing applications. It provides close integration between the browser and the host application including support for custom plugins, protocols, JavaScript objects and JavaScript extensions. The host application can optionally control resource loading, navigation, context menus, printing and more, while taking advantage of the same performance and HTML5 technologies available in the Google Chrome Web browser~\citep{cefGithub}.
+\par
+CEF runs using multiple processes. The main process which handles window creation, painting and network access is called the “browser” process. This is generally the same process as the host application and the majority of the application logic will run in the browser process. Blink rendering and JavaScript execution occur in a separate “render” process~\citep{cefTutorial}. The application behavior can be controlled and modified by overriding callbacks provided by classes of each process. CEF provides default implementation to most of the callbacks.
+\par
+When the application starts the browser process is created and initialized. Then a new render process is spawned for each unique origin (scheme + domain). In our case there will be a single render process for the web application part. Since CEF runs in multiple processes it is necessary to provide mechanisms for communicating between them~\citep{cefTutorial}. For this CEF provides its own inter-process communication mechanism. Besides exchanging process startup and runtime messages it also supports message routing. CEF provides a generic implementation for routing asynchronous messages between JavaScript running in the render process and C++ running in the browser process. The renderer-side router supports generic JavaScript callback registration and execution while the browser-side router supports application-specific logic via one or more application-provided Handler instances~\citep{cefTutorial}. These Handler instances are used to run Fileserver and Player modules within this application instance. They can be started or closed from the web application using JavaScript callback.
+
+%%-----------------------------------------------------------------------------------------
+\subsection{Web Application Part}
+
+As mentioned earlier, the web application is designed as a single-page web application. The reason to build it that way is simple - usual web pages are served from the server and running a server for this purpose would make little sense. Single-page applications~(SPA) are loaded once at the beginning~(HTML, JavaScript and CSS code) and instead of loading new pages from server they dynamically rebuild the current page. These applications have become popular recently and provide a solution to some problems web applications have compared to traditional web page design. Namely, stateless nature of web pages and wait time due to loading. On the other hand, SPA brought their own problems but most of them can be solved by some useful JavaScript libraries, packages and frameworks. One of the main negatives - speed of initial load when all required code is loaded at once is irrelevant for us. It is all stored locally on the device. Compared to the speed of network data transfers it is negligible.
+
+%%-----------------------------------------------------------------------------------------
+\subsubsection{Framework}
+
+There are a few frameworks for building single-page applications. They all provide their way of rebuilding the page and data management. Most of them are labeled as MVC frameworks. It is important to note that we chose our framework early in 2017 and since then a lot has changed. We were effectively choosing between Angular.JS and React.JS. The rest of the frameworks did not have large enough community or support at that time so we did not take them into consideration.
+\par
+To be precise, React is not labeled as framework but as a JavaScript library. Its role is to make creating interactive user interfaces easier. It has to be coupled with Redux, a predictable state container for JavaScript apps to reach the capabilities of Angular. In this form, we think both Angular and React + Redux can be used to do the same work, it is just a matter of personal choice and preference.
+\par
+Angular extends HTML vocabulary to allow creating dynamic web pages. Angular directives can be added to HTML elements to create reusable components. A component allows to hide complex DOM structure, CSS, and behavior. This lets the developers to focus either on what the application does or how the application looks separately~\citep{angular}. Angular offers two-way data binding. It means that when properties in model change, the UI is re-rendered to reflect the changes and reversed, when UI is changed these changes are propagated back to model.
+\par
+React deals with dynamic web pages by introducing JSX syntax. It is a syntax extension to JavaScript used to describe React components.It embraces the fact that rendering logic is inherently coupled with other UI logic. Instead of artificially separating technologies by putting markup and logic in separate files, React separates concerns with loosely coupled units called “components” that contain both~\citep{reactJSX}. These components serve similar purpose as in Angular - reuse and reduce HTML, CSS and behavior. While React components support state preserving natively, Redux brings a global store of the state. Components can be then bound to store to work similarly as in Angular providing a two-way binding. Additionally to Angular, React adds a virtual DOM. As we wrote previously, these frameworks dynamically modify current page. When DOM change is required, React first computes the change on a virtual version of DOM and then computes the most effective way to transfer current DOM to required state. This should increase application performance as less stress is put on the rendering engine of web browser.
+\par
+We chose to use React + Redux as our framework for web application as we find the syntax and concept more natural and simple to use. It is important to mention again that Angular would be equally capable for the job. Also, at the time we made the choice Angular 2 was released that introduced multiple improvements. However, library availability was another deciding factor in favor of React.
+
+%%-----------------------------------------------------------------------------------------
+\subsubsection{Design Principles}
+
+JavaScript is more forgiving compared to strong-typed compiled object-oriented programming languages so good code structure is important to maintain readability of code. Application design therefore follows recommended React and Redux design principles. The code becomes structured and is split into several types of code files. Every type contains specific functionality and extracts it from the others so similar functionality is grouped together. Below is the list of code file types and their description.
+
+\begin{itemize}
+    \item \textbf{Components} contain layout of the page – they display data supplied to it and link supplied actions to layout elements. There are two types of components, layout components that represent a whole page and visual components that represent a reusable functional element within a page
+    \item \textbf{Containers} contain functionality and business logic – functions, event callbacks and data preparation methods passed to components. They encapsulate components, therefore they are called containers. 
+    \item Redux \textbf{store} is used to preserve shared state of the application.
+    \item \textbf{Reducers} react to actions and change the data stored in the store.
+    \item \textbf{Actions} trigger changes on the store. For every reducer there is a set of actions and action creators. Every action creator may create zero, one or more actions depending on the conditions.
+\end{itemize}
+
+The flow of React + Redux application can be seen in figure \ref{fig04:reduxFlow}. Similarly to common web pages the page layout is determined by path, in React called "route". However, the route is only symbolic as the page remains the same. Navigating to different routes forces application to re-render it's content. Nesting the route can make only a part of the page to re-render. Every page consists of “smart component” called a container and a “dumb component” called component. As JSX syntax introduces HTML code in JavaScript files, splitting a component into two files with one containing layout and the other containing logic increases readability. The layout is determined by the state stored in store. Before the rendering the state is applied to component and the resulting layout is rendered. When an event occurs on a component, an action is triggered. Actions can range in complexity from a simple state property change to triggering multiple other actions, making AJAX request and others. Actions can send state change requests to reducers. Reducers are the only place where state can be changed. They process state change requests and return a new state object. State objects are always immutable. A store consists of multiple state objects and every state object is handled by its reducer. State change triggers current page to re-render, providing it with the new state and the loop completes.
+
+\begin{figure}[ht]\centering
+\includegraphics[width=1.0\textwidth]{img/reactReduxFlow.png}
+\caption{React + Redux flow}
+\label{fig04:reduxFlow}
+\end{figure}
+
+%%-----------------------------------------------------------------------------------------
+\subsubsection{Communication With Other Modules}
+
+To communicate with Fileserver module, we use axios library. It is a promise based HTTP client for the browser and node.js~\citep{axios}. We use it to send HTTP requests to Fileserver. It simplifies sending AJAX requests and provides modern Promise API. 
+\par
+WebSocket communication with Player module utilizes default WebSocket object that provides JavaScript. Upon establishing connection with Player, the created socket is stored in state. Actions that send messages to Player access this instance to do so. A callback function is provided to the constructor that handles incoming messages. Incoming messages are processed and corresponding action is triggered.
+\par
+Firebase provides software development kit~(SDK) in JavaScript for developers. Every communication with Database module utilizes this SDK. It provides methods to manipulate and read data as well as hook up callbacks. It is also used for user authentication.
+
+\subsubsection{JavaScript Libraries Used}
+
+We used multiple packages and libraries from Node.js Packet Manager~(NPM). We will mention important ones.
+\par
+Material-UI library offers styled React components in popular material design developed by Google. We used these components to create a modern and appealing UI which should look familiar to users.
+\par
+Reaxt-intl library is used to create a localized application. All strings in components are grouped in "messages.js" file next the files containing layout, marked with unique identifier and a default translation is supplied. When a string is needed its identifier is passed to a function from react-intl library which takes care of finding the right translation. When the application is built all strings are extracted to a JSON file. Multiple JSON files can be provided with different translations to support multiple languages.
+\par
+To execute AJAX requests we used Axios library. It simplifies creating these requests and provides modern Promise-based API.
+
+
+%%-----------------------------------------------------------------------------------------
+\subsection{Bringing The Module Together}
+
+On module startup the browser is run and initialized. When it is ready the web application is loaded from local storage. The application is displayed and users can work with it. The web application utilizes message router provided by CEF to communicate with browser. We registered a callback function \texttt{cefQuery} in JavaScript that allows sending messages to browser code. After users log in local Fileserver and Player are started utilising \texttt{cefQuery} function and connected to. These can be shut down and users may connect to other modules from "Devices" menu. 
 %%-----------------------------------------------------------------------------------------
 %% SECTION
 %%-----------------------------------------------------------------------------------------
-\section{Realtime Database Module}
-\todo{add short intro about how we designed it}
+\section{Database Module}
 
-\subsection{Structure}
-\todo{describe firebase structure} 
+Database structure can be found in the documentation chapter\todo{link to documentation}. A few remarks on the
+structure:
+\begin{itemize}
+    \item database design should allow to add new entity easily.
+    \item user and establishment data are divided on public and private part. In firebase, access to high level node provides access to all child nodes. Everyone should be able to read public data, only owner should see the private data.
+    \item to reduce data redundancy lists are used in libraries entity
+    \item to get a new key for a new node, firebase default node key generator is used (push function)
+    \item when a value is an id, it should always be stored as a string, even when the id is a number for more general use
+\end{itemize}
+
+\par
+Besides data storage Firebase is used to provide user authentication. It offers options to authenticate by e-mail address and a few popular social network accounts. IDs generated by authentication service are used in database to identify users.
