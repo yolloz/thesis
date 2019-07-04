@@ -9,31 +9,38 @@ In this chapter, we will discuss the decisions we made during application design
 
 We would like to start with describing a few real life use case scenarios of our application. These will help us to get a better understanding of the issue and to define user requirements.
 \begin{itemize}
-    \item An entrepreneur is establishing a new bar. The new bar focuses on younger clientele. The entrepreneur already has the interior designed but has not solved the sound system yet. A classic jukebox does not match the interior design and additionally, the pursued clientele does not carry cash or change anymore.
-    \item The owner of an establishment, where customers spend a lot of time waiting~(e.g. hairdressers, doctor's surgery), would like to make the waiting more pleasant by playing music. The owner has no particular knowledge about the music preference of their customers and would like to allow the customers to choose the music themselves while they wait.
+    \item An entrepreneur is establishing a new bar. The entrepreneur has not solved the sound system yet. A classic jukebox does not match the interior design and additionally, the pursued clientele does not carry cash or change anymore.
+    \item The owner of an establishment, where customers spend a lot of time waiting~(e.g., hairdresser), would like to make the waiting more pleasant by playing music. The owner has no particular knowledge about the music preference of their customers and would like to allow the customers to choose the music themselves while they wait.
     \item Peter throws a New Year's Eve party for his friends. He has a good collection of music on his computer. The music preference of his guests is varied so he would like to allow his guests to choose their songs. However, Peter has a lot of private things on his computer and he would not like to allow his guests to use his computer without his supervision nor would he like to spend the whole evening sitting at his computer instead of spending time with his guests.
 \end{itemize}
 
 \par
-More formally, the user of the application (further referenced to as "spot admin") would like to let other people (further referenced to as "guests") to choose what songs are being played in the application in their "music spot". Spot admin can define what songs are currently available to choose from and has control over music playback. Guests can browse available songs on a different device (e.g. mobile application on their phones) and enqueue their ordered songs in a queue.
+More formally, the user of the application (further referenced to as \textit{spot admin}) would like to let other people (further referenced to as \textit{guests}) to choose what songs are being played in the application in their \textit{music spot}. Spot admin can define what songs are currently available to choose from and has control over music playback. Guests can browse available songs on a different device (e.g., mobile application on their phones) and add their ordered songs in a queue.
 \par
-This thesis focuses on designing and developing an application for music playback used by spot admins. The design of application for guests is not part of this thesis. Such application considers slightly different user requirements and requires a different skill set outside of the expertise of the author of this thesis. A friend of the author works on developing a mobile app for guests that integrates with our application via a common data management system available via internet. The details of the integration of the mobile app will be explained later.
+This thesis focuses on designing and developing an application for music playback used by spot admins. The design of application for guests is not part of this thesis. Such application considers slightly different user requirements and requires a different skill set outside of the expertise of the author of this thesis. A prototype of mobile app for guests is under development that integrates with our application via a common data management system available on the internet. The details of the integration of the mobile app will be explained later.
 
 %%-----------------------------------------------------------------------------------------
 \subsection{User Requirements and Functionality}
 
-Based on the previously mentioned scenarios we are now able to formulate user requirements that our applications tries to fulfill. These define the functionality that the application offers and its design. 
+Based on the previously mentioned scenarios we are now able to formulate user requirements that our applications tries to fulfill and which influence the design. These requirements are split on functional and non-functional. Functional requirements describe expected behavior of the application while non-functional describe its expected operation.
+
+\paragraph{Functional requirements}
 \begin{itemize}
     \item Playing music is the core functionality of the application. It is important to support decoding of multiple popular audio formats and outputting the audio to an audio device.
     \item A song queue is a common thing known from jukeboxes. Multiple guests may order songs simultaneously or before a previous song has finished. Ordered songs are held in a queue and played one after the other based on when they were ordered.
     \item Music playback should be continuous. Music should play even when no songs are ordered by guests. The application should select song order by itself in such situations to limit required user supervision.
-    \item Another important requirement is music library. A music library stores and manages a collection of music files. A varied music library may contain thousands of music files. These music files will be offered to regular users to choose from. Users may also create playlists. Playlists allow to group music files within a music library. These can be used to offer different sets of songs on different occasions.
+    \item Another important requirement is music library. A music library stores and manages a collection of music files. A varied music library may contain thousands of music files. These music files will be offered to guests to choose from. Spot admins may also create playlists. Playlists allow to create a custom subset of music files within a music library. These can be used to offer different sets of songs on different occasions.
     \item User system is important for user authentication. Spot admins may provide a description of their music spot as part of their user account. Guests may discover music spots available close to them. It also lays the basis for potential payment system for ordered songs.
     \item Graphical user interface is necessary to allow users to easily interact with the application.
+\end{itemize}
+
+\paragraph{Non-functional requirements}
+\begin{itemize}
     \item The solution needs to be scalable to handle increasing number of guests within a music spot and to handle increasing size of music library. These two numbers should not limit the usability of the application.
     \item The application should be platform independent. Different use cases and users may prefer or require different platforms to run the application. Platform independence provides more potential users.
-    \item Internationalization of the application is a necessity. Even within Czech Republic potential spot admins might speak different languages~(e.g. foreign owners of establishments, exchange students, minorities etc.). The application should be designed to support localization to different languages.
+    \item Internationalization of the application is a necessity. Even within Czech Republic potential spot admins might speak different languages~(e.g., foreign owners of establishments, exchange students, minorities etc.). The application should be designed to support localization to different languages.
     \item The application should offer means of customization to accommodate a wide range of use cases.
+    \item The deployment of the application and music spot setup should be simple enough so it can be performed by users with basic computer skills.
 \end{itemize}
 
 %%-----------------------------------------------------------------------------------------
@@ -41,11 +48,11 @@ Based on the previously mentioned scenarios we are now able to formulate user re
 
 The range of possible use-cases of our application is wide. It can be seen earlier on the real life scenarios. Each of them have different requirements. The users would therefore appreciate the option to customize the application based on their needs. Application design should be able to accommodate these needs.
 \par
-One of the possible differences is the required complexity of provided services. Some users might prefer simple "Plug \& Play" type of application that is simple to set up, simple to start and the music is playing. Others might require complex audio settings and/or complex playlist creation and management tools.
+One of the possible differences is the required complexity of provided services. Some users might prefer simple \textit{Plug \& Play} type of application that is simple to set up, simple to start and the music is playing. Others might require complex audio settings and/or complex playlist creation and management tools.
 \par
 Additionally, our application extensively uses hardware. Whether it is speakers, which may require complex wiring in larger buildings, internet connection to communicate with mobile applications or data storage devices containing music libraries. Users might appreciate if they would not have to provide access to all of these resources on one device.
 \par
-The idea is to design a modular application. The application would be split into multiple separable modules. A module represents a separable process. Each module has specific role and defines unique functionality and services that it should provide. Modules communicate via network and together they provide all functionality that the application offers. They have predefined application programming interfaces that define how their services can be accessed and how to communicate with them. A module may then be implemented in multiple ways - as a stand-alone executable program or multiple modules may be combined together in one executable program. These may then run on devices owned by user or on a server.
+The idea is to split the application into multiple separable modules. A module represents a separable process. Each module has specific role and defines unique functionality and services that it should provide. Modules communicate with each other via network and together they provide all functionality that the application offers. They have predefined application programming interfaces that define how their services can be accessed and how to communicate with them. These modules may then run on one or more devices owned by user or on a server.
 \par
 By adopting this approach it is possible to create multiple implementations of certain modules. Each implementation of module might offer different level of required functionality and services or support different platforms and devices. Users might select the most suitable implementation for them.
 \par 
@@ -58,77 +65,61 @@ Last, but not least, not all modules would have to be run by the user. There can
 %%-----------------------------------------------------------------------------------------
 \section{Definition Of Modules}
 
-Each module should contain functionality that may be required to be separated from the rest of the application. That functionality would then be offered as services of the module. Defining too many modules might introduce unnecessary complexity. Too few modules might not provide desired flexibility. In this section we explain what is the purpose of each module and reason why it is separated from the rest of modules.
+\begin{figure}[ht]\centering
+\includegraphics[width=1.0\textwidth]{img/CommunicationGraph2}
+\caption{Communication among modules}
+\label{fig02:communicationAmongModules}
+\end{figure}
 
-%%-----------------------------------------------------------------------------------------
-\subsection{Manager Module}
+Upon reviewing the user requirements and analyzing target use cases we have decided to specify five separate modules.
 
-The most important module from the perspective of the user is the "Manager" module. This module provides graphical user interface~(GUI) for the user and manages the flow of the application as a whole.
-\par
-The GUI should allow the user to manage whole application from one place. It should offer controls for controlling music playback, browsing through music library, creating and editing playlists, managing song order, editing user and music spot details etc. Services provided by other modules via their APIs are in a computer-friendly form so the GUI provides human-friendly way to access them.
-\par
-Usually, an application that offers frontend~(GUI) requires backend to process user input and handle business logic. In Manager module, backend communicates with other modules and deals with other things like maintaining continuous music playback and processing orders from guests. It would be possible to separate backend into another module so that multiple frontend users could access a single backend instance~(e.g. multiple waiters working with one application instance in a bar). However, backend design reflects frontend requirements and different GUI implementations would have different requirements. Therefore both frontend and backend are a part of Manager module. Splitting them into two modules would either lead to limiting capabilities of their implementations or defining a too complex interface between them. It is important to note that an implementation of this module where frontend and backend are separated is still possible.
+\begin{enumerate}
+    \item Manager module
+        \begin{itemize}
+            \item Used by spot admins to operate the application
+            \item Provides graphical user interface~(GUI)
+            \item Manages the flow of the application
+        \end{itemize}
+    \item Fileserver module
+        \begin{itemize}
+            \item Stores a music library and supports browsing through it and distribution of music files
+            \item Supports creation of playlists to create custom subsets of its music files
+        \end{itemize}
+    \item Player module
+        \begin{itemize}
+            \item Handles the process of playing music - decoding music files and outputting audio to audio device
+        \end{itemize}
+    \item Data Management module
+        \begin{itemize}
+            \item Manages data exchange between spot admins and guests
+            \item Provides user system and user authentication
+            \item Stores music spot data ~(e.g., list of available songs, song queue)and settings
+        \end{itemize}
+    \item Guest Application module
+        \begin{itemize}
+            \item Provides front end for guests to discover music spots, browse available songs and order them
+        \end{itemize}
+\end{enumerate}
 
-%%-----------------------------------------------------------------------------------------
-\subsection{Fileserver Module}
-
-Fileserver module stores a music library. A music library is a source of music files for playback. It is a collection of music files that supports browsing through its contents. The module also supports distribution of music files. Additionally, it offers tools for creating and managing playlists as playlists consist of music files available within a music library.
 \par
-Music library is an expensive resource. It may require a considerable amount of disk storage. It might be appropriate to have this storage moved remotely (e.g. because of its physical size, safety or cooling requirements) or in a cloud storage. Furthermore, music is subject to copyrights. Acquiring a large amount of music files might get expensive. Therefore it might be useful to use a public Fileserver instead which offers its service for a monthly fee similarly to music streaming services such as Spotify. These are the two main reason why Fileserver is a separate module.
+Music library may require a considerable amount of disk storage. It might be appropriate to have this storage moved on a different device (e.g., because of its physical size, safety or cooling requirements) or in a cloud storage. Furthermore, music is subject to copyrights. Acquiring a large amount of music files might cost a lot of money. Therefore it might be useful to use a public Fileserver instead which offers its service for a monthly fee similarly to music streaming services such as Spotify. These are the two reason why Fileserver is a separate module.
 \par
-A music file is a file that contains audio data (raw or encoded) and usually also metadata about the content such as title, author or album name. It is important to realize that these metadata are displayed to users~(spot admins or guests) when they browse through music library. The actual audio data are important only for music playback, which is the only time when an entire music file is transferred.
-
-%%-----------------------------------------------------------------------------------------
-\subsection{Player Module}
-
-Next module is "Player" module. Its role is to play music. It is supplied with music files. All music files are encoded using a specific codec\footnote{A typical digital audio coder, or codec for encoder-decoder, is a device that takes analogue audio signals as input and transforms them temporarily into a convenient digital representation. This transformation process takes place in the encoder stage of the coder. Once we have the signal represented as a series of numbers then we can store it, process it, or transmit it. At some point, we would like to be able to listen again to the sound. To do so we need to transform the signal from its digital representation back to an analogue signal so that the human ear can detect and enjoy it. This inverse transformation from digital back to analogue takes place in the decoder stage of the coder~\citep{IntroToDigitalAudio}.}. Player module provides tools for decoding these music files utilising multiple popular audio codecs to produce data that can be sent to connected audio device to reproduce the audio.
+Player is a separate module to allow users to remotely control playback. It is possible to put the device~(e.g., a miniature PC) running this module to the most suitable location. As we mentioned earlier, in larger buildings the speakers may require complex wiring and this wiring does not have to lead to the device from which the player is controlled.
 \par
-It is important to note that this module does not decide what songs are played. Its role is to play songs that are given to it as it has no knowledge of currently available songs in music spot. As it was mentioned earlier, maintaining continuous music playback and subsequently deciding the song order is handled by Manager module.
+Data Management module provides global services and is separated because it is not run by spot admins. User authentication and music spot data should be accessible from anywhere on the internet so all users can login to their accounts and guests can discover nearby music spots wherever they are.
 \par
-Additionally, this module provides remote playback control~(e.g. play, pause, volume settings etc.). The reasons that playback can be controlled remotely are the same reasons that Player is a separate module: it is possible to give control to multiple users~(e.g. waiters in a bar) and it is possible to put the device~(e.g. a miniature PC) running this module to the most suitable location. As we mentioned earlier, in larger buildings the speakers may require complex wiring and this wiring does not have to lead to the device from which the player is controlled.
-
-%%-----------------------------------------------------------------------------------------
-\subsection{Data Management Module}
-
-Data Management module is an important module that connects spot admins using our application with guests using mobile application. It provides services used by both groups of users as well as handles interaction between them.
+Manager and Guest Application module provide the remaining functionality required by their respective users which does not need to be split further.
 \par
-This module provides user authentication and user system. User system stores user preferences and settings. One shared user system is sufficient for both users and regular users. One user account can then be used to host a music spot or as a guest.
+Guest Application is a simple front end for browsing available songs within a music spot and sending song orders.
 \par
-Each user can own a music spot. A music spot is a place where music is played from our application. Each music spot can add its name and description. It has a list of available songs~(music file metadata) that can be ordered. Ordered songs are then added to its queue. Guests may browse available music spots and order songs when they enter them.
-\par
-This module therefore also stores music spot data - its basic information such as name or description, list of available songs and song queue.
-\par
-User authentication and music spot data should be accessible from anywhere on the internet so all users can login to their accounts and guests can discover nearby music spots wherever they are. This requirement leads to creating only one global instance and implementation of this module. There are pros and cons of such decision:
-\paragraph{Pros}
-\begin{itemize}
-\item Users do not need to run their own instance. This module works as a server so users do not need to set up their own.
-\item Guests can discover nearby music spots based on their location.
-\item It is not required to provide network access to visiting guests, they can browse available songs and make orders using any internet connection~(e.g. wi-fi, cellular data etc.).
-\end{itemize}
-
-\paragraph{Cons}
-\begin{itemize}
-\item Application for guests has to ensure that songs can be ordered only by people present in music spot~(e.g. by location, scanning specific QR code...).
-\item Running costs for operating the global instance. They can be covered by donations, fee for running a music spot or share of the revenue from sold songs in a music spot.
-\end{itemize}
-\par
-The design of Data Management module is the reason it is separated from the rest of the application - it is not run by any of the users but all users utilise its services.
-
-%%-----------------------------------------------------------------------------------------
-\subsection{Guest Application Module}
-
-This module is used by guests. It allows them to discover available music spots at their location and when they enter one, they can browse available songs and order them if they wish so.
-\par
-As we mentioned earlier, application for guests is not part of the thesis. It is developed by a friend of the author of the thesis.
-\par
-Even though this module can be implemented in multiple ways, we find a mobile application to be the most suitable approach. A smartphone is a common device owned by many people nowadays and mobile applications are a familiar way to interact with the surrounding digital world. However, other implementations are feasible as long as they are able to consume services provided by Data Management module.
+Manager module requires back end layer to process user input and handle business logic. It communicates with other modules and deals with other things like maintaining continuous music playback and reacting to orders from guests. It would be possible to separate this layer into another module so that multiple people could control a single music spot~(e.g., multiple waiters working with one application instance in a bar). However, back end design reflects front end requirements and different GUI implementations would have different requirements. Therefore both front end and back end layers are a part of Manager module. Splitting them into two modules would either lead to limiting capabilities of their implementations or defining a too complex interface between them. It is important to note that an implementation of this module where front end and back end are separated is still possible.
 
 %%-----------------------------------------------------------------------------------------
 %% SECTION
 %%-----------------------------------------------------------------------------------------
 \section{Communication Among Modules}
 
-Before we dive into details about each module, it would be useful to take a look at the communication among modules as it influences their designs. Modules define an application programming interface~(API) that defines how to communicate with them and allows other modules to use their services. The design of each API then depends on the content~(services that it provides) and modules that use it. In this section we will focus on that.
+Before we get to details about each module, it would be useful to take a look at the communication among modules as it influences their designs. Modules define an application programming interface~(API) that defines how to communicate with them and allows other modules to use their services. The design of each API then depends on the content~(services that it provides) and modules that use it. In this section we will focus on that.
 \par
 Manager module requires no API. It provides GUI and handles business logic and no other module needs to access these services. Instead, Manager module utilizes APIs of other modules to gather data displayed in GUI and manage the flow of the application.
 \par
@@ -139,12 +130,6 @@ The API of Player module provides control over music playback. That includes als
 Lastly, the API of Data Management module provides user authentication and access to music spot data to both Manager and Guest Application modules. Manager module publishes a list of available songs when it is ready for playback and checks queue for orders. Guest Application module displays the list of available songs and adds orders to queue. This module does not use API of any other module.
 \par
 Figure \ref{fig02:communicationAmongModules} shows the above-mentioned relationship among modules. An arrow leads from module which API is used to module that uses the API and describes what services are used.
-
-\begin{figure}[ht]\centering
-\includegraphics[width=1.0\textwidth]{img/CommunicationGraph2}
-\caption{Communication among modules}
-\label{fig02:communicationAmongModules}
-\end{figure}
 
 %%-----------------------------------------------------------------------------------------
 %% SECTION
@@ -164,9 +149,133 @@ Manager module provides graphical user interface~(GUI) that allows spot admins t
 \end{itemize}
 
 \par
-There are multiple ways to create a GUI - classic desktop applications, web applications and mobile application. Since Manager module utilizes APIs of all of the other modules, these APIs should use technologies that restrict none of the mentioned ways if possible.
+In addition to GUI this module is also responsible for managing the flow of the application. To perform these tasks it utilizes APIs of other modules as seen in figure~\ref{fig02:communicationAmongModules}. Since the other modules are managed by Manager module, it does not need to provide any API. Any data or commands required by other modules are sent to them through their API.
 \par
-Manager module is also responsible for the flow of the application. There are multiple tasks that it needs to handle. When the spot admin wants to begin music playback, module has to publish the list of songs that admin selected to Data Management module so guests can see it. It manages what songs are played by Player module by passing it either song orders from guests or selecting a random song when there are no orders. It gathers song orders from Data Management module.
+The module manages what songs are played by Player module by passing it the sequence of songs to be played. This sequence is constructed in Manager module from songs ordered by guests, songs selected by spot admin or generated by Manager module. The GUI should support modifying this sequence up to preferences of spot admin.
+\par
+Spot admins need to be able to browse through music library of the connected Fileserver module to create their custom playlists and to choose what songs they would like to offer to their guests. To do that they need to see information about songs like title, author or album. Additionally, this information is further offered to guests. The location of music files and music files themselves are irrelevant in this process. It only needs to be available for Player when the file is about to be played.
+\par
+Before guests can access the list of available songs in a music spot, Manager module has to upload it to Data Management module so guests can access it. Since Manager module already has access to these data there is no problem with that. Manager also retrieves song orders from guests from Data Management module.
+\par
+There are multiple ways to create a GUI - classic desktop applications, web applications and mobile applications. Since Manager module utilizes APIs of all of the other modules, these APIs should use technologies that restrict none of the mentioned ways if possible.
+
+%%-----------------------------------------------------------------------------------------
+%% SECTION
+%%-----------------------------------------------------------------------------------------
+\section{Fileserver Module}
+
+Fileserver module manages a collection of music files. A music file is a file that contains audio data (raw or encoded) and usually also metadata about the content such as title, author or album name. These files are grouped in a music library that is offered to other modules as a service.
+\par
+In Manager module, spot admin can browse through this music library to create playlists and select songs for playback. For people, the metadata of music files are more important and comprehensible during this process than music files themselves or file structure. Therefore, the API should support browsing through metadata rather than music files. We support four most common metadata:
+\begin{itemize}
+    \item Song title
+    \item Artist name
+    \item Album name
+    \item Genre name
+\end{itemize}
+\par
+The structure of data in music library should reflect the logical structure among songs - they have an author, belong to an album or genre, optionally a playlist. This module therefore extracts metadata from music files and sorts the songs based on that. These data are then offered as music library. We consider that to be a more natural and intuitive structure for users.
+\par
+The music library can be a small private one or a large shared one. The file structure can vary for each use case or platform. Moreover, file system access might be unwanted in case of a public Fileserver. That is why file management is excluded from the API that this module offers. Instead, Fileserver implementations are free to choose their way of managing the contents of the library.
+\par
+%% write about player module which requires the music files access in API
+Player module still requires to access music files to be able to play music. However, it does not require any additional information apart from the music file itself. It is given a sequence of songs to be played from Manager module. This sequence can then be a sequence of song identifiers which Player module then uses to retrieve associated music file for playback.
+\par
+As Fileserver, the source of music files, can run remotely from Player module, the delay in music file transfer can reach several seconds. There are two ways to solve music file transfers. They can be streamed continuously or downloaded fully before they are played.
+\par
+Streaming has low time overhead and low space requirements as small bits of music files are sent on demand for playback. However, it relies heavily on stable network to provide continuous playback.
+\par
+On the other hand, downloading full songs takes non-negligible amount of time and downloaded songs have to be stored before they are played. This method guarantees continuous playback of a song once it begins even with unstable network connection.
+\par
+The application is expected to provide smooth and seamless music playback as music is intended to play for many people. Therefore we have chosen to support downloading full songs. This method can produce buffering for audio between two songs on a slow network connection. However, such connection would cause multiple buffering pauses within a song using audio streaming and such option is unacceptable.
+
+%%-----------------------------------------------------------------------------------------
+\subsection{API design}
+
+Fileserver needs to provide fast access to song metadata. To support ordering and filtering as well as quick access these metadata should be extracted once when music file is added to library and stored in a database or data structure. It is common practice to wrap it with a RESTful API. RESTful API allows Fileserver implementations to choose the most suitable underlying data representation while providing easily accessible API. It utilizes HTTP protocol so modules utilizing this API only require a HTTP client.
+\par
+Alternatively we could use SOAP protocol, which is more robust, but this robustness comes with more complexity and the API would not benefit from the use of SOAP protocol as REST already covers all of its requirements.
+\par
+In addition to song metadata, RESTful API also supports music file transfer required by Player module. Utilisation of FTP protocol which is dedicated for file transfers is not necessary and it would introduce additional complexity. Both HTTP and FTP protocols utilize TCP connection for data transfer. The advantage of FTP protocol is that it does not send additional headers which HTTP does. However, compared to the size of a music files these headers are negligible. Moreover, TCP connections used by HTTP can be used for multiple requests whereas FTP uses one connection for one file transfer. In conclusion, FTP protocol offers no important advantage compared to HTTP protocol used by RESTful API.
+\par
+The resulting API follows principles of REST. It contains 6 different resources:
+\begin{itemize}
+    \item Songs
+    \item Artists
+    \item Albums
+    \item Genres
+    \item Playlists
+    \item Music files
+\end{itemize}
+Each resource is defined by the endpoint that it can be accessed by and query parameters are used to modify the result. HTTP request method determines the action performed when accessing a resource. GET method is used to retrieve resources. POST, PUT and DELETE methods are used to create, modify or delete playlist resource as all others are immutable. JSON file format is used for transferring data and music files are transferred in binary format. For more details see the API documentation \todo{add link to documentation}.
+
+%%-----------------------------------------------------------------------------------------
+%% SECTION
+%%-----------------------------------------------------------------------------------------
+\section{Player Module}
+
+Player module plays music files. All music files are encoded using a specific codec\footnote{A typical digital audio coder, or codec for encoder-decoder, is a device that takes analogue audio signals as input and transforms them temporarily into a convenient digital representation. This transformation process takes place in the encoder stage of the coder. Once we have the signal represented as a series of numbers then we can store it, process it, or transmit it. At some point, we would like to be able to listen again to the sound. To do so we need to transform the signal from its digital representation back to an analogue signal so that the human ear can detect and enjoy it. This inverse transformation from digital back to analogue takes place in the decoder stage of the coder~\citep{IntroToDigitalAudio}.}. Player module provides tools for decoding these music files utilising multiple popular audio codecs to produce data that can be sent to connected audio device to reproduce the audio.
+\par
+It is important to note that this module does not decide what songs are played. It has no knowledge of currently available songs in music spot. As it was mentioned earlier, deciding the song order is handled by Manager module.
+\par
+The application is expected to provide continuous music playback. Since music files can be located on a remote Fileserver it is important to support file caching, so that next file is always ready to play without a pause for buffering after the previous one finished. To achieve that, Player module needs to know which songs to cache in advance. To solve that, it has an internal queue of files to be played. Instead of telling it what song to play next, Manager module is required to provide a list of songs to be played next in advance so the files can be cached.
+
+%%-----------------------------------------------------------------------------------------
+\subsection{API design}
+
+API requirements for Player module are different from Fileserver module. Fileserver is stateless and should be able to support multiple users. On the other hand, Player needs to preserve its state, e.g. playback progress or cache, it can only support one session at a time as there is usually only one audio device available. Additionally, it needs to be able to notify Manager module about changes of its state without a request~(e.g., errors, playback state, not enough songs to cache). Therefore the requirements for communication technology are different too.
+\par
+The API should support setting up the session~(setting location of Fileserver, providing a list of songs to cache) and calling playback control commands. What we try to accomplish is to control the Player as if it was a part of our code, but it can be located anywhere accessible in network. This technique is called Remote~Procedure~Call~(RPC). Using this technique, we can call Player function stubs as if it was a local component. These stubs then pack function name with parameters into a message and send it to a remote Player instead of calling the actual function locally. Upon receiving the message, the Player unpacks it and calls the desired function with provided parameters.
+\par
+Remote procedure call is a long-known problem in distributed computing. There are numerous protocols and frameworks that solve it. We decided to use JSON-RPC protocol, which is a light-weight RPC protocol utilising JSON format to serialize messages exchanged between server and client. It defines several data structures and the rules around their processing. Its simplicity was the reason we chose it as it can be used in any programming language or platform. The procedure calls for playback control are very simple and easily defined in this protocol. Additionally, it supports notification messages that can be sent from server to client as traditional RPC protocols support only requests initiated by client.
+\par
+JSON-RPC is transport agnostic so we could choose the most suitable transport method. We decided to use WebSocket protocol. WebSocket is a common protocol used by web applications that require a full-duplex communication and has implementations available in many programming languages including C++, C\# or Java, so it does not limit different Player module implementations. It utilizes a TCP connection for data transfer and supports sending text messages in advance to a stream of bytes. The use of TCP connection is important for its reliability. It is important that all RPC messages arrive to destination and that they arrive in correct order so the procedures are called in the same order as in Manager module. However, TCP sockets are not supported by web browsers, which would disallow web application implementations of Manager module. Therefore we opted for WebSockets.
+\par
+For the detailed documentation of RPC messages and communication rules see \todo{link to documentation}
+
+%%-----------------------------------------------------------------------------------------
+%% SECTION
+%%-----------------------------------------------------------------------------------------
+\subsection{Data Management Module}
+
+Data Management module is an important module that connects spot admins using our application with guests using mobile application. It provides services used by both groups of users as well as handles interaction between them.
+\par
+This module provides user authentication and user system. User system stores user preferences and settings. One shared user system is sufficient for both spot admins and guests. One user account can then be used to host a music spot or as a guest.
+\par
+Each user can own a music spot. A music spot is a place where music is played from our application. Each music spot can add its name and description. It has a list of available songs~(music file metadata) that can be ordered. Ordered songs are then added to its queue. Guests may browse available music spots and order songs when they enter them.
+\par
+This module therefore also stores music spot data - its basic information such as name or description, list of available songs and song queue.
+\par
+ This requirement leads to creating only one global instance and implementation of this module. There are pros and cons of such decision:
+\paragraph{Pros}
+\begin{itemize}
+\item Users do not need to run their own instance. This module works as a server so users do not need to set up their own.
+\item Guests can discover nearby music spots based on their location.
+\item It is not required to provide network access to visiting guests, they can browse available songs and make orders using any internet connection~(e.g., wi-fi, cellular data etc.).
+\end{itemize}
+
+\paragraph{Cons}
+\begin{itemize}
+\item Application for guests has to ensure that songs can be ordered only by people present in music spot~(e.g., by location, scanning specific QR code...).
+\item Running costs for operating the global instance. They can be covered by donations, fee for running a music spot or share of the revenue from sold songs in a music spot.
+\end{itemize}
+\par
+The design of Data Management module is the reason it is separated from the rest of the application - it is not run by any of the users but all users utilise its services.
+
+%%-----------------------------------------------------------------------------------------
+\subsection{Guest Application Module}
+
+This module is used by guests. It allows them to discover available music spots at their location and when they enter one, they can browse available songs and order them if they wish so.
+\par
+As we mentioned earlier, application for guests is not part of the thesis. It is developed by a friend of the author of the thesis.
+\par
+Even though this module can be implemented in multiple ways, we find a mobile application to be the most suitable approach. A smartphone is a common device owned by many people nowadays and mobile applications are a familiar way to interact with the surrounding digital world. However, other implementations are feasible as long as they are able to consume services provided by Data Management module.
+
+
+
+
+
+
 
 
 
