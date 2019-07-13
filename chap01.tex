@@ -1,6 +1,6 @@
 \chapter{Analysis}
 
-In this chapter, we will discuss the decisions we made during application design and reasons behind every choice. We will define what influenced the chosen application structure. Finally, we will explain the purpose of each part of the application.
+In this chapter, we will discuss the decisions we made during application design and reasons behind every choice. We will define user requirements and outline the design of the application. Finally, we will describe details of each part of the application.
 
 %%-----------------------------------------------------------------------------------------
 %% SECTION
@@ -22,7 +22,7 @@ This thesis focuses on designing and developing an application for music playbac
 %%-----------------------------------------------------------------------------------------
 \subsection{User Requirements and Functionality}
 
-Based on the previously mentioned scenarios we are now able to formulate user requirements that our applications tries to fulfill and which influence the design. These requirements are split on functional and non-functional. Functional requirements describe expected behavior of the application while non-functional describe its expected operation.
+Based on the previously mentioned scenarios we are now able to formulate user requirements that our applications tries to fulfill and which influence the design. These requirements are split on functional and non-functional.
 
 \paragraph{Functional requirements}
 \begin{itemize}
@@ -67,7 +67,7 @@ Last, but not least, not all modules would have to be run by the user. There can
 
 \begin{figure}[ht]\centering
 \includegraphics[width=1.0\textwidth]{img/CommunicationGraph2}
-\caption{Communication among modules}
+\caption{Modules and relationship among them}
 \label{fig02:communicationAmongModules}
 \end{figure}
 
@@ -93,7 +93,7 @@ Upon reviewing the user requirements and analyzing target use cases we have deci
         \begin{itemize}
             \item Manages data exchange between spot admins and guests
             \item Provides user system and user authentication
-            \item Stores music spot data ~(e.g., list of available songs, song queue)and settings
+            \item Stores music spot data ~(e.g., list of available songs, song queue) and settings
         \end{itemize}
     \item Guest Application module
         \begin{itemize}
@@ -101,6 +101,10 @@ Upon reviewing the user requirements and analyzing target use cases we have deci
         \end{itemize}
 \end{enumerate}
 
+%%-----------------------------------------------------------------------------------------
+\subsection{Reasons For Module Division}
+
+An application could be divided into modules based on different criteria. We proceeded by separating certain functionality into modules from the firstly monolithic application to solve problems that spot admins might face. We tried to keep the number of modules low to prevent unnecessary complexity in design and user experience.
 \par
 Music library may require a considerable amount of disk storage. It might be appropriate to have this storage moved on a different device (e.g., because of its physical size, safety or cooling requirements) or in a cloud storage. Furthermore, music is subject to copyrights. Acquiring a large amount of music files might cost a lot of money. Therefore it might be useful to use a public Fileserver instead which offers its service for a monthly fee similarly to music streaming services such as Spotify. These are the two reason why Fileserver is a separate module.
 \par
@@ -118,7 +122,7 @@ Manager module requires back end layer to process user input and handle business
 %% SECTION
 %%-----------------------------------------------------------------------------------------
 \section{Communication Among Modules}
-
+\todo{Myslim si, ze tuto sekciu by sme mohli vyhodit a davalo by to zmysel aj bez nej, ale zatial ju tu ponecham}
 Before we get to details about each module, it would be useful to take a look at the communication among modules as it influences their designs. Modules define an application programming interface~(API) that defines how to communicate with them and allows other modules to use their services. The design of each API then depends on the content~(services that it provides) and modules that use it. In this section we will focus on that.
 \par
 Manager module requires no API. It provides GUI and handles business logic and no other module needs to access these services. Instead, Manager module utilizes APIs of other modules to gather data displayed in GUI and manage the flow of the application.
@@ -218,7 +222,7 @@ Player module plays music files. All music files are encoded using a specific co
 \par
 It is important to note that this module does not decide what songs are played. It has no knowledge of currently available songs in music spot. As it was mentioned earlier, deciding the song order is handled by Manager module.
 \par
-The application is expected to provide continuous music playback. Since music files can be located on a remote Fileserver it is important to support file caching, so that next file is always ready to play without a pause for buffering after the previous one finished. To achieve that, Player module needs to know which songs to cache in advance. To solve that, it has an internal queue of files to be played. Instead of telling it what song to play next, Manager module is required to provide a list of songs to be played next in advance so the files can be cached.
+The application is expected to provide continuous music playback. Since music files can be located on a remote Fileserver it is important to support file caching, so that next file is always ready to play without a pause for buffering after the previous one finished. To achieve that, Player module needs to know which songs to cache in advance. It has an internal queue of files to be played. Instead of telling it what song to play next, Manager module is required to provide a list of songs to be played next in advance so the files can be cached.
 
 %%-----------------------------------------------------------------------------------------
 \subsection{API design}
@@ -242,54 +246,63 @@ Data Management module is an important module that connects spot admins using ou
 \par
 This module provides user authentication and user system. User system stores user preferences and settings. One shared user system is sufficient for both spot admins and guests. One user account can then be used to host a music spot or as a guest.
 \par
-Each user can own a music spot. A music spot is a place where music is played from our application. Each music spot can add its name and description. It has a list of available songs~(music file metadata) that can be ordered. Ordered songs are then added to its queue. Guests may browse available music spots and order songs when they enter them.
+Each user account can be associated with a music spot. A music spot is a place where music is played from our application. Each music spot can add its name and description. It has a list of available songs~(music file metadata) that can be ordered. Ordered songs are then added to its queue. Guests may browse available music spots and order songs when they enter them.
 \par
 This module therefore also stores music spot data - its basic information such as name or description, list of available songs and song queue.
 \par
- This requirement leads to creating only one global instance and implementation of this module. There are pros and cons of such decision:
-\paragraph{Pros}
-\begin{itemize}
-\item Users do not need to run their own instance. This module works as a server so users do not need to set up their own.
-\item Guests can discover nearby music spots based on their location.
-\item It is not required to provide network access to visiting guests, they can browse available songs and make orders using any internet connection~(e.g., wi-fi, cellular data etc.).
-\end{itemize}
-
-\paragraph{Cons}
-\begin{itemize}
-\item Application for guests has to ensure that songs can be ordered only by people present in music spot~(e.g., by location, scanning specific QR code...).
-\item Running costs for operating the global instance. They can be covered by donations, fee for running a music spot or share of the revenue from sold songs in a music spot.
-\end{itemize}
+The requirements for this module lead to creating only one global instance and implementation of this module. That is the difference between this module and the other modules. Other modules can be run by user as they provide user-specific functions. This module provides services for all users of the application~(both spot admins and guests) and therefore can not be run by one of them. Instead, this module runs as a server and provides its functions to all users.
 \par
-The design of Data Management module is the reason it is separated from the rest of the application - it is not run by any of the users but all users utilise its services.
+An alternative solution would be to only support user system and basic music spot information in this module and handle the interaction between guests and spot admins~(providing list of available songs and ordering songs) in a new separate module or add this functionality to Manager module. That would, however, make it more difficult to set up a music spot as spot admin would have to provide a way for guests to connect to the new module~(either restricting to local wi-fi network or setting up a server).
+\par
+We prefer the first option. Spot admins do not need to set up and run their own module instance. Additionally,it is not required to provide network access to visiting guests, they can browse available songs and make orders using any internet connection~(e.g., wi-fi, cellular data etc.). The disadvantages are that anyone with internet access anywhere in the world can order songs in any music spot. Additionally, there are running costs associated with operating this global instance of module.
+\par
+The first disadvantage creates vulnerability to malicious song orders. Anyone in the world may order certain songs to cause discomfort to people present in the music spot. To deal with that, application for guests can provide countermeasures to ensure that songs can be ordered only when guests are present in music spot. There are some possibilities such as passphrase, scanning a QR code or determining by location. Spot admins may then select and combine supported countermeasures to find balance between comfort for guests and required level of security. In advance to that, spot admins may cancel any song orders or ban users from entering their music spot.
+\par
+Running costs for operating this module can be covered by donations, fee for running a music spot or share of the revenue from sold songs in a music spot. This depends on the business plan if the application was to be released.
 
 %%-----------------------------------------------------------------------------------------
-\subsection{Guest Application Module}
+\subsection{Firebase Platform}
 
-This module is used by guests. It allows them to discover available music spots at their location and when they enter one, they can browse available songs and order them if they wish so.
+In collaboration with developer of mobile application we chose Firebase Platform~\citep{firebase} to host Data Management module. Firebase is a platform for mobile and web apps offering many tools for development of these apps. We chose it because it provides ready-to-use authentication service, database to store data that supports notifications on changes and provides its own hosting.
 \par
-As we mentioned earlier, application for guests is not part of the thesis. It is developed by a friend of the author of the thesis.
+Authentication service provides secure way to authenticate users. It supports e-mail + password accounts as well as using multiple other accounts such as Facebook or Twitter accounts.
 \par
-Even though this module can be implemented in multiple ways, we find a mobile application to be the most suitable approach. A smartphone is a common device owned by many people nowadays and mobile applications are a familiar way to interact with the surrounding digital world. However, other implementations are feasible as long as they are able to consume services provided by Data Management module.
+Firebase provides two NoSQL databases to store data. Cloud Firestore is a NoSQL document database and Firebase Realtime Database is a NoSQL JSON-based database. However, at the time we chose Firebase only Realtime Database was available. Both databases support notifications for changes where clients may subscribe to listen to changes on any node within the database. On change, client is notified and callback function is called with changed data. This feature is important to listen to song queue changes in a music spot.
+\par
+It is important to discuss suitability of NoSQL database for our data. The main drawback of a NoSQL database comapred to SQL database is the performance for structured queries. Spot admins require no data filtering, they only access their user and spot data and subscribe to queue changes. Guests require querying music spots~(finding spot by name or location) and browsing through available songs in a music spot. These queries are simple enough for expected numbers of music spots or songs to be in thousands. In case these numbers would grow larger, it would be necessary to rethink the Data Management module design and optionally transfer to SQL database or even replace Firebase with different platform or develop own platform. In such case the user count should be sufficient to provide enough resources for rebuilding this module. For now, we consider databases provided by Firebase to be suitable.
+\par
+Firebase Platform is hosted in its own cloud with pricing for using its services. It starts for free for testing purposes and offers multiple pricing plans according to expected usage.
+\par
+Additionally, Firebase provides API for both main mobile platforms Android and iOS along with JavaScript and C++ support. This is important to easily integrate with mobile application.
+\par
+Even though other solutions would be possible, the services provided by Firebase significantly reduced the amount of work on Data Management module.
+\par
+The interaction between spot admins and guests is performed by modifying data in Data Management module. Spot admins modify their music spot information and list of available songs that guests can see and browse. Guests add song orders to song queue which Manager module used by spot admins listens to and uses to create a song sequence played in the music spot.
 
+%%-----------------------------------------------------------------------------------------
+%% SECTION
+%%-----------------------------------------------------------------------------------------
+\section{Guest Application Module}
 
+This module provides an application used by guests. It allows them to interact with music spots.
+\par
+As we mentioned earlier, application for guests is not part of the thesis, but a mobile application is being developed. A mobile application was chosen since smartphone is a common device owned by many people nowadays and mobile applications are a familiar way to interact with the surrounding digital world. However, other implementations are feasible as long as they are able to consume services provided by Data Management module.
+\par
+The application allows guests to log into their accounts. Then they can discover available music spots~(by name or by location). They may enter a music spot, which may require verification selected by spot admin. This is not yet implemented but reviewed methods are by location~(being in a selected radius around music spot), entering a passphrase chosen by spot admin or scanning a QR code with the passphrase available at the music spot. When guests successfully enter a music spot, they get access to list of available songs which they may browse and from this list they may order songs. Song orders may require payment so the application should support that. Additionally, guests can see what songs have already been ordered and what song is currently playing in music spot.
 
+%%-----------------------------------------------------------------------------------------
+%% SECTION
+%%-----------------------------------------------------------------------------------------
+\section{Related Work}
 
+There are several similar applications and solutions that offer modern music playback in public places.
 
+%%-----------------------------------------------------------------------------------------
+\subsection{BarBox}
 
+BarBox provides services for establishment for a monthly fee. The source of music is their updated music database and establishments may restrict what songs they wish to play in their establishment. Application for playback supports PC, MAC, iOS and Android devices. Guests can interact with establishment by using a mobile application that connects to local wi-fi. They may select their preferred songs and BarBox then plays song based of song preferences of current guests. Additionally, guests may push their songs higher in order by purchasing and spending BBcoins~\citep{barbox}.
 
+%%-----------------------------------------------------------------------------------------
+\subsection{Noispot}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Noispot is a solution for establishments that uses custom hardware and offers its own music database. Establishments may choose form playlists selected by Noispot DJs or create their own playlists. Custom hardware is used for music playback that is easy to setup and install. Guests may use mobile application to vote for their favourite songs or artists and Noispot plays songs that are preferred by most of them~\citep{noispot}.
