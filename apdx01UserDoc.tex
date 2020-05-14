@@ -1,0 +1,63 @@
+\chapter{User manual}
+
+JukeIt is an application for running and managing a music spot. In a music spot, you play music for your visitors and offer them the option to interact with what is being played. You can create your playlists, manage your music, control the playback and other related actions.
+\par
+JukeIt application is ready to use after unzipping the provided zip file in the attachments. It runs on Windows 7 or newer, requires at least 1GB RAM and 250MB free disc space.
+
+\section{Sign in and sign up}
+
+To enter the application you need to sign in with your user account. If you don't have one, continue to sign up page and create one by entering your e-mail address, password and name, which will be visible to other users.
+
+\section{Music spot creation}
+
+In JukeIt, every music spot is tied to one user account. If you don't have one yet, after signing in you will be taken to \emph{music spot creation wizard}, where you enter the necessary information for your new music spot. This information can be further modified after the creation in the application.
+
+\section{User interface}
+
+JukeIt provides several different screens accessible from tabs at the top of the application:
+\begin{itemize}
+    \item \textbf{Library} - allows you to browse the music library you are connected to and manage your playlists
+    \item \textbf{Establishment} - displays information about your music spot and allows you to edit it
+    \item \textbf{Playback} - provides interface for managing music spot playback and song queues
+    \item \textbf{Devices} - you can manage connections to Fileserver and Player from this screen
+    \item \textbf{Settings} - allows you to change several preferences in the application
+\end{itemize}
+
+\par
+Additionally, at the bottom of the application is the music player widget that allows you to control music playback across all screens.
+
+\section{Devices}
+
+JukeIt consists of three parts - Manager, Fileserver and Player. Manager application provides user interface for managing your music spot. Fileserver provides access to a music library while Player handles playing and outputting audio. With Fileserver and Player you can opt to use local or remote device. Local is running directly from your Manager application. Remote runs on a different device and you connect to it via network. This option allows you to customize the usage of JukeIt based on your needs, for example running a remote Player on a device, that is right next to speakers in your music spot while running Manager application on a PC in your office.
+
+\section{Setting up JukeIt}
+
+In this section we will describe how to start playing music with JukeIt step by step.
+
+\subsection{Preparing your playlist}
+
+First we need to prepare a playlist that will be played on our music spot. This can be done from \emph{Library} screen.
+\par
+If you're using local Fileserver, you can add new music files to your library by clicking on \emph{Add files} button in top right corner. Remote Fileserver does not support file management and should already be set up. By default, JukeIt connects to local Fileserver.
+\par
+To create a playlist, go to \emph{Playlists} tab on \emph{Library} screen. Click on \emph{Add playlist} button and fill the name and description fields in the dialog window that appears. After clicking \emph{Save}, a new blank playlist is created. To fill it with songs, navigate through library and select songs you wish to add. We can add them either by right-clicking the desired song and selecting option \emph{Add to playlist} from context menu or selecting multiple songs at once by clicking \emph{three dots} button located above the list on the right side and selection option \emph{Add to playlist}. Then we can select songs we wish to add and confirm by clicking \emph{Add} button that appears above the list on the right side.
+
+\subsection{Publishing a playlist}
+
+Once the playlist is ready we need to publish it so the guests may see it from their mobile apps. This is done by clicking \emph{Play} button in top right corner. Besides playlists, this action can be done on any list of songs in library, e.g. all songs from an artist.
+\par
+When the playlist is published, you will be redirected to \emph{Playback} screen. There are three important buttons in top right corner. \emph{Activate spot} changes the state of the music spot to active so the guests may start selecting songs. \emph{Remove playlist} unpublishes current playlist in case we would like to select a different playlist. \emph{Start playing} begins playing songs from current playlist~(in case the playback hasn't started yet). At the center of the screen are located cards with available songs in current playlist, priority queue, order queue and playlist queue.
+
+\subsection{Song queues}
+
+JukeIt utilizes three types of queues to determine song order. Each queue has set priority and songs in it are played only if there are no songs in a queue with higher priority.
+\par
+Priority queue has the highest priority and songs in there are played first. Only you can add songs to this queue and it is intended to be used for songs that you wish to play immediately.
+\par
+Order queue has medium priority. It contains songs ordered by guests in the order as they have done so from the mobile application. You can not add songs to this queue.
+\par
+Playlist queue has the lowest priority and is used as a fallback option for when there are no ordered songs. You may add songs that you wish to play during blank intervals without orders, but in case this queue does not contain enough songs, JukeIt will randomly generate new songs for you. Note that Player requires to have always a couple of songs ready so there will always be more than one song based on the Player requirements.
+
+\section{Settings}
+
+On \emph{Settings} screen you may set up your device preferences. You may set whether you want to use local or remote Fileserver and Player, how to connect to remote, whether to connect to them immediately on application start up etc. It allows you to save these settings without the necessity to enter this information every time.
